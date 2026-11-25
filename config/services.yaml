@@ -9,6 +9,8 @@
 parameters:
     # Nombre de médias par page pour la pagination
     app.media_per_page: "%env(int:MEDIA_PER_PAGE)%"
+    # Nombre d'invités par page pour la pagination
+    app.guests_per_page: "%env(int:GUESTS_PER_PAGE)%"
     # Poids maxi autorisé pour l'upload d'image
     app.media.max_size: "%env(MEDIA_MAX_SIZE)%"
     # Types MIME autorisés pour l'upload d'image

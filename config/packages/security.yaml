@@ -26,6 +26,7 @@ security:
                 default_target_path: admin_media_index
             logout:
                 path: admin_logout
+            user_checker: App\Security\UserChecker
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall

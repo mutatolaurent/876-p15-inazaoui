@@ -34,6 +34,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?string $password = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isRevoked = false;
+
     /** @var Collection<int, Media> */
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user')]
     private Collection $medias;
@@ -78,6 +81,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDescription(?string $description): void
     {
         $this->description = $description;
+    }
+
+    public function isRevoked(): bool
+    {
+        return $this->isRevoked;
+    }
+
+    public function setIsRevoked(bool $isRevoked): static
+    {
+        $this->isRevoked = $isRevoked;
+
+        return $this;
     }
 
     /** @return Collection<int, Media> */

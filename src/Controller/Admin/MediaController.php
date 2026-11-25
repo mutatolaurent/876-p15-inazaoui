@@ -26,18 +26,38 @@ class MediaController extends AbstractController
      * sont gérés en renvoyant la page 1 ou la dernière page.
      */
     #[Route('/admin/media', name: 'admin_media_index')]
-    public function index(#[MapQueryParameter(filter: \FILTER_VALIDATE_INT, flags: \FILTER_NULL_ON_FAILURE)]
-        ?int $page = null, ): Response
-    {
+    public function index(
+        #[MapQueryParameter(filter: \FILTER_VALIDATE_INT, flags: \FILTER_NULL_ON_FAILURE)]
+        ?int $page = null,
+        #[MapQueryParameter(filter: \FILTER_VALIDATE_INT, flags: \FILTER_NULL_ON_FAILURE)]
+        ?int $userId = null,
+    ): Response {
         // Nombre de médias par page
         $limit = max(1, (int) $this->getParameter('app.media_per_page'));
 
         // Critères de recherche des médias
         $criteria = [];
+        $guest = null;
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
 
         // Si l'utilisateur n'est pas admin, l'utilisateur est utilisé comme critère de recherche pour ne récupérer que ses médias
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            $criteria['user'] = $this->getUser();
+        if (!$isAdmin) {
+            $currentUser = $this->getUser();
+            $criteria['user'] = $currentUser;
+            if ($currentUser instanceof User && !$currentUser->isAdmin()) {
+                $guest = $currentUser;
+            }
+            $userId = null;
+        } elseif (null !== $userId) {
+            $user = $this->em->getRepository(User::class)->find($userId);
+            if (!$user instanceof User) {
+                throw $this->createNotFoundException('Utilisateur introuvable.');
+            }
+
+            $criteria['user'] = $user;
+            if (!$user->isAdmin()) {
+                $guest = $user;
+            }
         }
 
         // Récupère le nombre total de médias correspondant aux critères (ceux de l'utilisateur ou tous si l'utilisateur est admin)
@@ -61,6 +81,8 @@ class MediaController extends AbstractController
             'total' => $total,
             'page' => $page,
             'totalPages' => $totalPages,
+            'userId' => $userId,
+            'guest' => $guest,
         ]);
     }
 
