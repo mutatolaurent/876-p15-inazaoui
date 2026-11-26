@@ -1,0 +1,16 @@
+{% extends 'front.html.twig' %}
+
+{% block title %}Erreur {{ status_code }} - {{ parent() }}{% endblock %}
+
+{% block front %}
+    <div class="container py-5">
+        <div class="row justify-content-center text-center">
+            <div class="col-md-8 col-lg-6">
+                <p class="display-4 fw-bold mb-2">{{ status_code }}</p>
+                <h1 class="h3 mb-3">{{ status_text }}</h1>
+                <p class="text-muted mb-4">{{ message }}</p>
+                <a href="{{ path('home') }}" class="btn btn-primary">Retour à l'accueil</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

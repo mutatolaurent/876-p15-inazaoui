@@ -37,6 +37,9 @@ class AlbumController extends AbstractController
             $this->em->persist($album);
             $this->em->flush();
 
+            // Ajoute un message flash pour informer l'utilisateur du résultat de l'action
+            $this->addFlash('success', 'L\'album '.$album->getName().' a été ajouté avec succès.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -53,6 +56,9 @@ class AlbumController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $this->em->flush();
 
+            // Ajoute un message flash pour informer l'utilisateur du résultat de l'action
+            $this->addFlash('success', 'L\'album '.$album->getName().' a été mis à jour avec succès.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -60,11 +66,20 @@ class AlbumController extends AbstractController
     }
 
     #[Route('/admin/album/delete/{id}', name: 'admin_album_delete')]
-    public function delete(int $id): Response
+    public function delete(int $id, Request $request): Response
     {
         $media = $this->em->getRepository(Album::class)->find($id);
+
+        // Vérifie la validité du jeton CSRF pour sécuriser l'action de suppression
+        if (!$this->isCsrfTokenValid('delete-album-'.$media->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $this->em->remove($media);
         $this->em->flush();
+
+        // Ajoute un message flash pour informer l'utilisateur du résultat de l'action
+        $this->addFlash('success', 'L\'album a été supprimé avec succès.');
 
         return $this->redirectToRoute('admin_album_index');
     }
