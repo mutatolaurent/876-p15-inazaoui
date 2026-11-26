@@ -8,6 +8,7 @@ use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusExce
 use Symfony\Component\Security\Core\User\UserCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+// Vérifie l'état de l'utilisateur avant et après l'authentification
 final class UserChecker implements UserCheckerInterface
 {
     public function checkPreAuth(UserInterface $user): void
@@ -16,6 +17,7 @@ final class UserChecker implements UserCheckerInterface
             return;
         }
 
+        // Vérifie si l'utilisateur a été révoqué avant l'authentification
         if ($user->isRevoked()) {
             throw new CustomUserMessageAccountStatusException('Votre accès a été révoqué, contactez l\'administrateur du site.');
         }
@@ -27,6 +29,7 @@ final class UserChecker implements UserCheckerInterface
             return;
         }
 
+        // Vérifie si l'utilisateur a été révoqué après l'authentification
         if ($user->isRevoked()) {
             throw new CustomUserMessageAccountStatusException('Votre accès a été révoqué, contactez l\'administrateur du site.');
         }

@@ -47,9 +47,9 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      *
      * @return int Le nombre d'invités
      */
-    public function countGuests(): int
+    public function countGuests(bool $excludeRevoked = false): int
     {
-        return (int) $this->createGuestsQueryBuilder()
+        return (int) $this->createGuestsQueryBuilder($excludeRevoked)
             ->select('COUNT(u.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -61,9 +61,9 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      *
      * @return list<User>
      */
-    public function findGuests(?int $maxResult = null, int $firstResult = 0): array
+    public function findGuests(?int $maxResult = null, int $firstResult = 0, bool $excludeRevoked = false): array
     {
-        $queryBuilder = $this->createGuestsQueryBuilder()
+        $queryBuilder = $this->createGuestsQueryBuilder($excludeRevoked)
             ->orderBy('u.id', 'ASC')
             ->setFirstResult($firstResult);
 
@@ -79,11 +79,19 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     /**
      * Crée un QueryBuilder pour retrouver les invités (utilisateurs qui ne sont pas des administrateurs).
      */
-    private function createGuestsQueryBuilder(): QueryBuilder
+    private function createGuestsQueryBuilder(bool $excludeRevoked = false): QueryBuilder
     {
-        return $this->createQueryBuilder('u')
+        $queryBuilder = $this->createQueryBuilder('u')
             ->andWhere('u.roles IS NULL OR u.roles NOT LIKE :role')
             ->setParameter('role', '%"ROLE_ADMIN"%');
+
+        if ($excludeRevoked) {
+            $queryBuilder
+                ->andWhere('u.isRevoked = :isRevoked')
+                ->setParameter('isRevoked', false);
+        }
+
+        return $queryBuilder;
     }
 
     /**

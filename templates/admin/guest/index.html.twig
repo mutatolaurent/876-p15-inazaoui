@@ -23,7 +23,7 @@
                         <a href="{{ path('admin_media_index', {userId: guest.id}) }}" class="btn btn-secondary">Voir les médias</a>
                     </td>
                     <td>
-                        <a href="{{ path('admin_guest_edit', {id: guest.id}) }}" class="btn btn-primary">Modifier</a>
+                        <a href="{{ path('admin_guest_edit', {id: guest.id}) }}" class="btn btn-warning">Modifier</a>
                         <form
                             method="post"
                             action="{{ path('admin_guest_toggle_revoke', { id: guest.id }) }}"
@@ -34,13 +34,22 @@
                             <input type="hidden" name="_token" value="{{ csrf_token('toggle-revoke-guest-' ~ guest.id) }}">
                             <button
                                 type="submit"
-                                class="btn {{ guest.isRevoked ? 'btn-primary' : 'btn-danger' }}"
+                                class="btn {{ guest.isRevoked ? 'btn-warning' : 'btn-danger' }}"
                                 style="min-width: 12.5rem;"
                             >
                                 {{ guest.isRevoked ? 'Annuler la révocation' : 'Révoquer les accès' }}
                             </button>
                         </form>
-                        <a href="" class="btn btn-danger">Supprimer</a>
+                        <form
+                            method="post"
+                            action="{{ path('admin_guest_delete', { id: guest.id }) }}"
+                            style="display: inline;"
+                            data-confirm="{{ "Supprimer définitivement cet invité ?"|json_encode }}"
+                            onsubmit="return confirm(JSON.parse(this.dataset.confirm));"
+                        >
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-guest-' ~ guest.id) }}">
+                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                        </form>
                     </td>
                 </tr>
             {% endfor %}

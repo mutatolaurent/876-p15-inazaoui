@@ -99,6 +99,9 @@ final class GuestController extends AbstractController
             $this->em->persist($guest);
             $this->em->flush();
 
+            // Ajoute un message flash pour informer l'utilisateur du résultat de l'action
+            $this->addFlash('success', 'L\'invité '.$guest->getName().' a été ajouté avec succès.');
+
             // Redirige vers la liste des invités après l'ajout réussi
             return $this->redirectToRoute('admin_guest_index');
         }
@@ -148,6 +151,9 @@ final class GuestController extends AbstractController
             $this->em->persist($guest);
             $this->em->flush();
 
+            // Ajoute un message flash pour informer l'utilisateur du résultat de l'action
+            $this->addFlash('success', 'Les modifications de l\'invité '.$guest->getName().' ont été enregistrées.');
+
             // Redirige vers la liste des invités après la modification réussie
             return $this->redirectToRoute('admin_guest_index');
         }
@@ -188,11 +194,47 @@ final class GuestController extends AbstractController
         $this->addFlash(
             'success',
             $nextRevokedState
-                ? 'L\'accès de l\'invité a été révoqué.'
-                : 'La révocation de l\'invité a été annulée.'
+                ? 'L\'accès de l\'invité '.$guest->getName().' a été révoqué.'
+                : 'La révocation de l\'invité '.$guest->getName().' a été annulée.'
         );
 
         // Redirige vers la liste des invités après la modification de l'état de révocation
+        return $this->redirectToRoute('admin_guest_index');
+    }
+
+    /**
+     * Supprime un invité et ses médias associés.
+     * La suppression physique des médias est gérée par l'événement Doctrine MediaRemoveListener.
+     *
+     * @param int     $id      L'identifiant de l'invité à supprimer
+     * @param Request $request La requête HTTP contenant les données du formulaire
+     *
+     * @return Response La réponse HTTP redirigeant vers la liste des invités après la suppression
+     */
+    #[Route('/admin/guest/{id}/delete', name: 'admin_guest_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(int $id, Request $request): Response
+    {
+        // Récupère l'invité correspondant à l'identifiant fourni
+        $guest = $this->userRepository->find($id);
+
+        // Vérifie si l'invité existe et n'est pas un administrateur
+        if (!$guest instanceof User || $guest->isAdmin()) {
+            throw $this->createNotFoundException('Invité introuvable.');
+        }
+
+        // Vérifie la validité du jeton CSRF pour sécuriser l'action de suppression
+        if (!$this->isCsrfTokenValid('delete-guest-'.$guest->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        // Supprime l'invité de la base de données
+        $this->em->remove($guest);
+        $this->em->flush();
+
+        // Ajoute un message flash pour informer l'utilisateur du résultat de l'action
+        $this->addFlash('success', 'L\'invité '.$guest->getName().' et ses médias ont été supprimés.');
+
+        // Redirige vers la liste des invités après la suppression
         return $this->redirectToRoute('admin_guest_index');
     }
 }
