@@ -1,9 +1,12 @@
 {% extends 'admin.html.twig' %}
 
 {% block admin %}
+    {% set paginationParams = userId is not null ? {userId: userId} : {} %}
     <div class="d-flex justify-content-between align-items-center">
-        <h1>Medias</h1>
-        <a href="{{ path('admin_media_add') }}" class="btn btn-primary">Ajouter</a>
+        <h1>{% if guest %}Media de {{ guest.name }}{% else %}Médias{% endif %}</h1>
+        {% if userId is null %}
+            <a href="{{ path('admin_media_add') }}" class="btn btn-primary">Ajouter</a>
+        {% endif %}
     </div>
     <table class="table">
         <thead>
@@ -27,7 +30,17 @@
                         <td>{{ media.album.name ?? '' }}</td>
                     {% endif %}
                     <td>
-                        <a href="{{ path('admin_media_delete', {id: media.id}) }}" class="btn btn-danger">Supprimer</a>
+                        <form
+                            method="post"
+                            action="{{ path('admin_media_delete', { id: media.id }) }}"
+                            style="display: inline;"
+                            data-confirm="{{ "Supprimer définitivement ce media ?"|json_encode }}"
+                            onsubmit="return confirm(JSON.parse(this.dataset.confirm));"
+                        >
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-media-' ~ media.id) }}">
+                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                        </form>
+                        {# <a href="{{ path('admin_media_delete', {id: media.id}) }}" class="btn btn-danger">Supprimer</a> #}
                     </td>
                 </tr>
             {% endfor %}
@@ -38,25 +51,25 @@
         <ul class="pagination">
             {% if page > 1 %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: 1}) }}">Première page</a>
+                    <a class="page-link" href="{{ path('admin_media_index', paginationParams|merge({page: 1})) }}">Première page</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: page - 1}) }}">Précédent</a>
+                    <a class="page-link" href="{{ path('admin_media_index', paginationParams|merge({page: page - 1})) }}">Précédent</a>
                 </li>
             {% endif %}
 
             {% for i in range(max(1, page - 3), min(totalPages, page + 3)) %}
                 <li class="page-item {% if i == page %}active{% endif %}">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: i}) }}">{{ i }}</a>
+                    <a class="page-link" href="{{ path('admin_media_index', paginationParams|merge({page: i})) }}">{{ i }}</a>
                 </li>
             {% endfor %}
 
             {% if page < totalPages %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: page + 1}) }}">Suivant</a>
+                    <a class="page-link" href="{{ path('admin_media_index', paginationParams|merge({page: page + 1})) }}">Suivant</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="{{ path('admin_media_index', {page: totalPages}) }}">Dernière page</a>
+                    <a class="page-link" href="{{ path('admin_media_index', paginationParams|merge({page: totalPages})) }}">Dernière page</a>
                 </li>
             {% endif %}
         </ul>

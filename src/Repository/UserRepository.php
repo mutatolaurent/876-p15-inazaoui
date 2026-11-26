@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -19,11 +20,17 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
+    /**
+     * Construit un nouveau UserRepository.
+     */
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, User::class);
     }
 
+    /**
+     * Met à jour le mot de passe d'un utilisateur.
+     */
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
@@ -36,18 +43,55 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * Trouve tous les utilisateurs qui ne sont pas des administrateurs.
+     * Compte le nombre d'invités (utilisateurs qui ne sont pas des administrateurs).
+     *
+     * @return int Le nombre d'invités
+     */
+    public function countGuests(bool $excludeRevoked = false): int
+    {
+        return (int) $this->createGuestsQueryBuilder($excludeRevoked)
+            ->select('COUNT(u.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Retrouve les invités (utilisateurs qui ne sont pas des administrateurs)
+     * avec pagination.
      *
      * @return list<User>
-     * */
-    public function findGuests(): array
+     */
+    public function findGuests(?int $maxResult = null, int $firstResult = 0, bool $excludeRevoked = false): array
     {
-        return $this->createQueryBuilder('u')
-            ->andWhere('u.roles IS NULL OR u.roles NOT LIKE :role')
-            ->setParameter('role', '%"ROLE_ADMIN"%')
+        $queryBuilder = $this->createGuestsQueryBuilder($excludeRevoked)
             ->orderBy('u.id', 'ASC')
+            ->setFirstResult($firstResult);
+
+        if (null !== $maxResult) {
+            $queryBuilder->setMaxResults($maxResult);
+        }
+
+        return $queryBuilder
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Crée un QueryBuilder pour retrouver les invités (utilisateurs qui ne sont pas des administrateurs).
+     */
+    private function createGuestsQueryBuilder(bool $excludeRevoked = false): QueryBuilder
+    {
+        $queryBuilder = $this->createQueryBuilder('u')
+            ->andWhere('u.roles IS NULL OR u.roles NOT LIKE :role')
+            ->setParameter('role', '%"ROLE_ADMIN"%');
+
+        if ($excludeRevoked) {
+            $queryBuilder
+                ->andWhere('u.isRevoked = :isRevoked')
+                ->setParameter('isRevoked', false);
+        }
+
+        return $queryBuilder;
     }
 
     /**

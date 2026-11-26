@@ -1,0 +1,12 @@
+{% extends 'admin.html.twig' %}
+
+{% block title %}Erreur {{ status_code }} - Admin{% endblock %}
+
+{% block admin %}
+    <div class="py-4">
+        <p class="display-5 fw-bold mb-2">{{ status_code }}</p>
+        <h1 class="h3 mb-3">{{ status_text }}</h1>
+        <p class="text-muted mb-4">{{ message }}</p>
+        <a href="{{ path('admin_guest_index') }}" class="btn btn-primary">Retour à l'administration</a>
+    </div>
+{% endblock %}
